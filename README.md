@@ -1,2 +1,1 @@
-# prasadbcs_github_repo
-my personal
+This is the src code from my Philly.Net code camp demo
