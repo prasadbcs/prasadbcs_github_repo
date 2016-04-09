@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Map with Circles</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+    <style>
+        html, body, #mapid {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            padding-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mapid"></div>
+
+    <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+    <script>
+        var mymap = L.map('mapid').setView([40.034444, -75.514444], 12);
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: "© OpenStreetMap contributors" })
+            .addTo(mymap);
+        var oneMileCircle = L.circle([40.034444, -75.514444], 1609.34, {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.09
+        }).addTo(mymap);
+        var fiveMileCircle = L.circle([40.034444, -75.514444], 8064.72, {
+            color: 'blue',
+            fillColor: '#f03',
+            fill : false,
+            fillOpacity: 0.1
+        }).addTo(mymap);
+
+        var fiveMileCircle = L.circle([40.034444, -75.514444], 16093.4, {
+            color: 'black',
+            fillColor: '#f03',
+            fill: false,
+            fillOpacity: 0.1
+        }).addTo(mymap);
+    </script>
+</body>
+</html>

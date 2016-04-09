@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Leaflet Map</title>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
+    <script src="http://hoduhub.com/code/india.js"></script>
+    <style>
+        #map-container {
+            height: 520px;
+            width: 600px;
+        }
+        <!--
+
+        map container style -->
+        .info {
+            padding: 6px 8px;
+            <!-- font: 14px/16px Arial, Helvetica, sans-serif; -->
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+
+            .legend i {
+                width: 18px;
+                height: 18px;
+                float: left;
+                margin-right: 8px;
+                opacity: 0.7;
+            }
+    </style>
+</head>
+<body>
+
+    <!-- map container to hold map -->
+    <div id="map-container"> </div>
+
+    <script>
+
+	// Step 1:	Basic States Map
+
+	/*  Instantiates a map object given a div element (or its id)
+		and optionally an object literal with map options.
+		L.map( <HTMLElement|String> id, <Map options> options? )
+		initialize the map on the "map-container" div with a given
+		center and zoom
+	*/
+	var map = L.map('map-container', {
+		center: [21.0000, 78.0000],
+		zoom: 4
+	});
+
+
+	// Step 2:	Adding Some Color
+
+	/*  Now we need to color the states according to their population.
+		Using the values we got from it, we create a function that returns
+		a color based on population
+	*/
+
+	function getColor(d) {
+    return d > 100000000  ? '#67000d' :
+		   d > 50000000   ? '#cb181d' :
+           d > 5000000    ? '#fc9272' :
+           d > 100000     ? '#fee0d2' :
+           d > 50000  	  ? '#fff5f0' :
+						   'white';
+	}
+
+	/* 	Next we define a styling function for our GeoJSON layer
+		so that its fillColor depends on feature.properties.population property,
+		also adjusting the appearance a bit and adding a nice touch with dashed stroke.
+	*/
+
+	//it return the style object
+	function style(feature) {
+		return {
+			fillColor: getColor(Number(feature.properties.population)),          // call a function getColor() pass a numeric value and it return a color base on value
+			weight: 2,
+			opacity:0.7,
+			color: 'white',
+			dashArray: '3',
+			fillOpacity: 1
+		};
+	}
+
+	// Step 3:	Adding Interaction
+
+	/*	 Now let’s make the states highlighted visually in some
+		way when they are hovered with a mouse.
+		First we’ll define an event listener for layer mouseover event:
+	*/
+
+	 /*	Here we get access to the layer that was hovered through e.target,
+		set a thick grey border on the layer as our highlight effect,
+		also bringing it to the front so that the border doesn’t clash with nearby states
+		(but not for IE or Opera, since they have problems doing bringToFront on mouseover).
+	 */
+
+	function highlightFeature(e) {
+		var layer = e.target;
+		layer.setStyle({
+			weight: 5,
+			color: '#666',
+			dashArray: '',
+			fillOpacity: 0.7
+		});
+
+		/*if (!L.Browser.ie && !L.Browser.opera) {
+		  layer.bringToFront();
+		} */
+
+		info.update(layer.feature.properties);
+	}
+
+
+	// Next we’ll define what happens on mouseout:
+
+	/*  The handy geojson.resetStyle method will reset the layer style
+		to its default state (defined by our style function).
+		For this to work, make sure our GeoJSON layer is accessible
+		through the geojson variable by defining it before our listeners
+		and assigning the layer to it later:
+	*/
+
+	function resetHighlight(e) {
+		geojson.resetStyle(e.target);
+		info.update();
+	}
+
+	// As an additional touch, let’s define a click listener that zooms to the state:
+	function zoomToFeature(e) {
+		map.fitBounds(e.target.getBounds());
+	}
+
+	// Now we’ll use the onEachFeature option to add the listeners on our state layers:
+	function onEachFeature(feature, layer) {
+		layer.on({
+			mouseover: highlightFeature,
+			mouseout: resetHighlight,
+			click: zoomToFeature
+		});
+	}
+
+	/* 	Represents a GeoJSON object or an array of GeoJSON objects.
+		Allows you to parse GeoJSON data and display it on the
+		Creates a GeoJSON layer. Optionally accepts an object
+		in GeoJSON format to display on the map.
+	*/
+
+	var geojson = L.geoJson(indiaStatesShapeData, {
+		style: style,               // here we call a style function
+		onEachFeature: onEachFeature   // here we call a onEachFeature function
+	}).addTo(map);
+
+
+	/*  We could use the usual popups on click to show information about different states,
+		but we’ll choose a different route — showing it on state hover inside a custom control.
+	*/
+
+	var info = L.control();
+		info.onAdd = function (map) {
+		this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+		this.update();
+		return this._div;
+	};
+
+	info.update = function (props) {
+		this._div.innerHTML = '<h4>India Population </h4>' +  (props ?
+			'<b>' + props.NAME_1 + '</b><br />' + numberWithCommas(props.population) + ' people / mi<sup>2</sup>'
+			: 'Hover over a state');
+	};
+
+	info.addTo(map);
+
+
+	// Custom Legend Control
+	// Creating a control with a legend is easier, since it is static and doesn’t change on state hover. JavaScript code:
+	var legend = L.control({position: 'bottomright'});
+	legend.onAdd = function (map) {
+		 var div = L.DomUtil.create('div', 'info legend'),
+		  grades = [0, 50000, 100000, 5000000, 50000000, 100000000],
+		  labels = [];
+
+		   for (var i = 0; i < grades.length; i++) {
+			   div.innerHTML +=
+				'<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+				grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+		   }
+		     return div;
+	};
+
+	legend.addTo(map);
+
+	function numberWithCommas(x) {
+		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	}
+
+    </script>
+
+</body>
+</html>
